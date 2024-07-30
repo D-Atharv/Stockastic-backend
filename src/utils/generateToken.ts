@@ -1,20 +1,26 @@
+
+
 import jwt from "jsonwebtoken"
 import { Response } from "express"
 
-export const generateToken = (userId: string, resp:Response) => {
-    try{
-        const token = jwt.sign({userId}, process.env.JWT_SECRET!, {expiresIn: "1d"});
+export const generateToken = (user: { id: number; role: string }, resp: Response) => {
+    try {
+        const token = jwt.sign(
+            { userId: user.id, role: user.role },
+            process.env.JWT_SECRET!,
+            { expiresIn: "1d" }
+        );
 
-        resp.cookie("jwt",token, {
+        resp.cookie("jwt", token, {
             httpOnly: true,
-            secure: true,
+            secure: false,
             sameSite: "none",
             maxAge: 24 * 60 * 60 * 1000
         })
 
         return token;
 
-    }catch (error: unknown) {
+    } catch (error: unknown) {
         if (error instanceof Error) {
             console.log(error.message);
         } else {

@@ -8,7 +8,7 @@ import { generateToken } from "../utils/generateToken";
 
 export const signup = async (req: Request, resp: Response) => {
     try {
-        const { email, name, username, password, confirmPassword, reg_num } = req.body;
+        const { email, name, username, password, confirmPassword, reg_num, role = 'PARTICIPANT' } = req.body;
 
         if (!email || !name || !username || !password || !confirmPassword || !reg_num) {
             return resp.status(400).json({ message: "Please fill in all the details" });
@@ -48,7 +48,8 @@ export const signup = async (req: Request, resp: Response) => {
                 name: name,
                 username: username,
                 password: hashedPassword,
-                reg_num: reg_num
+                reg_num: reg_num,
+                role: role
             }
         })
 
@@ -56,7 +57,7 @@ export const signup = async (req: Request, resp: Response) => {
 
             //generating the token
 
-            generateToken(newUser.id.toString(), resp);
+            generateToken({ id: newUser.id, role: newUser.role }, resp);
 
             resp.status(201).json({
                 id: newUser.id,
@@ -64,6 +65,7 @@ export const signup = async (req: Request, resp: Response) => {
                 username: newUser.username,
                 email: newUser.email,
                 reg_num: newUser.reg_num,
+                role: newUser.role
             })
         } else {
             resp.status(201).json({ error: "Something went wrong" });
@@ -91,10 +93,10 @@ export const signup = async (req: Request, resp: Response) => {
 
 export const login = async (req: Request, resp: Response) => {
     try {
-        const { username, password } = req.body;    
-        
+        const { username, password } = req.body;
+
         const user = await prisma.user.findUnique({
-            where : {
+            where: {
                 username: username
             }
         });
@@ -107,19 +109,20 @@ export const login = async (req: Request, resp: Response) => {
 
         const isPasswordCorrect = await bcryptjs.compare(password, user.password);
 
-        if(!isPasswordCorrect) {
+        if (!isPasswordCorrect) {
             return resp.status(400).json({
                 error: "Incorrect Password. Please try again"
             })
         }
 
-        generateToken(user.id.toString(), resp);
+        generateToken({ id: user.id, role: user.role }, resp);
 
         resp.status(200).json({
             id: user.id,
             name: user.name,
             username: user.username,
-            email:user.email
+            email: user.email,
+            role: user.role
         });
 
     } catch (error: unknown) {
