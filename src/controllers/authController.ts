@@ -4,13 +4,15 @@ import bcryptjs from 'bcryptjs';
 import { emailRegex } from "../types/email";
 import { regNumRegex } from "../types/reg_num";
 import { generateToken } from "../utils/generateToken";
+import { addTokenToBlacklist } from '../utils/tokenBlackList';
+
 
 
 export const signup = async (req: Request, resp: Response) => {
     try {
-        const { email, name, username, password, confirmPassword, reg_num, role = 'PARTICIPANT' } = req.body;
+        const { email, name, password, confirmPassword, regNo, role = 'PARTICIPANT' } = req.body;
 
-        if (!email || !name || !username || !password || !confirmPassword || !reg_num) {
+        if (!email || !name || !password || !confirmPassword || !regNo) {
             return resp.status(400).json({ message: "Please fill in all the details" });
         }
 
@@ -20,7 +22,7 @@ export const signup = async (req: Request, resp: Response) => {
         }
 
         //validating reg_num format
-        if (!regNumRegex.test(reg_num)) {
+        if (!regNumRegex.test(regNo)) {
             return resp.status(400).json({ message: "Enter valid registration number" });
         }
 
@@ -31,7 +33,7 @@ export const signup = async (req: Request, resp: Response) => {
         //assuming user table is defined in prisma made
         const existingUser = await prisma.user.findUnique({
             where: {
-                username: username
+                email: email
             }
         })
 
@@ -46,10 +48,9 @@ export const signup = async (req: Request, resp: Response) => {
             data: {
                 email: email,
                 name: name,
-                username: username,
                 password: hashedPassword,
-                reg_num: reg_num,
-                role: role
+                regNo: regNo,
+                role: role,
             }
         })
 
@@ -62,9 +63,8 @@ export const signup = async (req: Request, resp: Response) => {
             resp.status(201).json({
                 id: newUser.id,
                 name: newUser.name,
-                username: newUser.username,
                 email: newUser.email,
-                reg_num: newUser.reg_num,
+                reg_num: newUser.regNo,
                 role: newUser.role
             })
         } else {
@@ -93,11 +93,11 @@ export const signup = async (req: Request, resp: Response) => {
 
 export const login = async (req: Request, resp: Response) => {
     try {
-        const { username, password } = req.body;
+        const { email, regNo, password } = req.body;
 
         const user = await prisma.user.findUnique({
             where: {
-                username: username
+                email: email
             }
         });
 
@@ -120,7 +120,6 @@ export const login = async (req: Request, resp: Response) => {
         resp.status(200).json({
             id: user.id,
             name: user.name,
-            username: user.username,
             email: user.email,
             role: user.role
         });
@@ -133,9 +132,32 @@ export const login = async (req: Request, resp: Response) => {
     }
 }
 
+// export const logout = async (req: Request, resp: Response) => {
+//     try {
+//         resp.clearCookie("jwt");
+//         resp.status(200).json({ message: "Logged out successfully" });
+//     } catch (error: unknown) {
+//         if (error instanceof Error) {
+//             console.log("Error in logout controller", error.message);
+//             resp.status(500).json({ error: "Internal Server Error" });
+//         }
+//     }
+// }
+
 export const logout = async (req: Request, resp: Response) => {
     try {
-        resp.clearCookie("jwt");
+        const token = req.cookies.jwt;
+        if (token) {
+            addTokenToBlacklist(token); // Add token to blacklist
+        }
+
+        resp.cookie("jwt", "", {
+            expires: new Date(0), // Expire immediately
+            httpOnly: true,       // Helps mitigate XSS attacks
+            // secure: process.env.NODE_ENV === 'production', // Only use in HTTPS environments
+            sameSite: 'strict',   // Helps prevent CSRF attacks
+        });
+
         resp.status(200).json({ message: "Logged out successfully" });
     } catch (error: unknown) {
         if (error instanceof Error) {
@@ -143,4 +165,4 @@ export const logout = async (req: Request, resp: Response) => {
             resp.status(500).json({ error: "Internal Server Error" });
         }
     }
-}
+};

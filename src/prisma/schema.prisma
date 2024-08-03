@@ -1,5 +1,5 @@
 datasource db {
-    provider = "postgresql"
+    provider = "postgres" // or "postgresql", depending on your database
     url      = env("DATABASE_URL")
 }
 
@@ -8,76 +8,90 @@ generator client {
 }
 
 model User {
-    id           Int           @id @default(autoincrement())
-    name         String
-    email        String        @unique
-    username     String        @unique
-    password     String
-    reg_num      String        @unique
-    role         Role          @default(PARTICIPANT)
-    teamId       Int?
-    team         Team?         @relation(fields: [teamId], references: [id])
-    portfolio    Portfolio?
-    transactions Transaction[]
-    createdAt    DateTime      @default(now())
-    updatedAt    DateTime      @updatedAt
+    id        Int      @id @default(autoincrement())
+    email     String   @unique
+    name      String
+    password  String
+    role      Role     @default(PARTICIPANT)
+    createdAt DateTime @default(now())
+    team      Team?    @relation(fields: [teamId], references: [id])
+    teamId    Int?
+    regNo     String
 }
 
 model Team {
-    id        Int      @id @default(autoincrement())
-    name      String
+    id        Int        @id @default(autoincrement())
+    teamName  String     @unique
+    createdAt DateTime   @default(now())
     members   User[]
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-}
-
-model Stock {
-    id             Int              @id @default(autoincrement())
-    name           String
-    symbol         String           @unique
-    price          Float
-    createdAt      DateTime         @default(now())
-    updatedAt      DateTime         @updatedAt
-    PortfolioStock PortfolioStock[]
-    Transaction    Transaction[]
+    portfolio Portfolio?
 }
 
 model Portfolio {
-    id        Int              @id @default(autoincrement())
-    userId    Int              @unique
-    user      User             @relation(fields: [userId], references: [id])
-    stocks    PortfolioStock[]
-    createdAt DateTime         @default(now())
-    updatedAt DateTime         @updatedAt
+    id           Int           @id @default(autoincrement())
+    teamId       Int           @unique
+    balance      Float         @default(0.0)
+    createdAt    DateTime      @default(now())
+    team         Team          @relation(fields: [teamId], references: [id])
+    transactions Transaction[]
 }
 
-model PortfolioStock {
-    id          Int       @id @default(autoincrement())
-    portfolioId Int
-    stockId     Int
-    quantity    Int
-    stock       Stock     @relation(fields: [stockId], references: [id])
-    portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+model Stock {
+    id                Int           @id @default(autoincrement())
+    ticker            String        @unique
+    stockName         String
+    createdAt         DateTime      @default(now())
+    participantStocks Int
+    promoterStocks    Int
+    prices            StockPrice[]
+    transactions      Transaction[]
 }
+
+model StockPrice {
+    id           Int      @id @default(autoincrement())
+    stockId      Int
+    stockName    String
+    price        Float
+    openingPrice Float
+    lowerRange   Float
+    upperRange   Float
+    priceDate    DateTime @default(now())
+    stock        Stock    @relation(fields: [stockId], references: [id])
+
+    @@map("stock_prices")
+}
+
+// model StockPrice {
+//     id           Int      @id @default(autoincrement())
+//     stockId      Int
+//     price        Float
+//     openingPrice Float
+//     lowerRange   Float
+//     upperRange   Float
+//     priceDate    DateTime @default(now())
+//     stock        Stock    @relation(fields: [stockId], references: [id])
+
+//     @@map("stock_prices")
+// }
 
 model Transaction {
-    id        Int             @id @default(autoincrement())
-    userId    Int
-    stockId   Int
-    quantity  Int
-    type      TransactionType // 'BUY' or 'SELL'
-    price     Float
-    createdAt DateTime        @default(now())
-    user      User            @relation(fields: [userId], references: [id])
-    stock     Stock           @relation(fields: [stockId], references: [id])
-}
-
-enum Role {
-    PARTICIPANT
-    ADMIN
+    id              Int             @id @default(autoincrement())
+    portfolioId     Int
+    stockId         Int
+    transactionType TransactionType
+    quantity        Int
+    price           Float
+    transactionDate DateTime        @default(now())
+    portfolio       Portfolio       @relation(fields: [portfolioId], references: [id])
+    stock           Stock           @relation(fields: [stockId], references: [id])
 }
 
 enum TransactionType {
     BUY
     SELL
+}
+
+enum Role {
+    ADMIN
+    PARTICIPANT
 }
