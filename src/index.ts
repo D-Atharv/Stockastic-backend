@@ -5,8 +5,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { Server } from 'socket.io';
 import auth from './routes/auth';
-import adminRoute from './routes/adminRoute';
-import { setupSocket } from './sockets/socket';
+import api from './routes/api'
+import { Authorization } from './middlewares/authorization';
+// import { setupSocket } from './sockets/socket';
 
 dotenv.config();
 
@@ -18,13 +19,14 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use(cors({
-  origin: 'http://localhost:3000', // frontend URL
+  origin: ['http://localhost:3000', 'http://localhost:5173'], // frontend URL
 }));
 
-app.use('/api/auth', auth);
-app.use('/api', adminRoute);
+app.use('/auth', auth);
+app.use('/api', Authorization);
+app.use('/api', api);
 
-setupSocket(io);
+// setupSocket(io);
 
 const port = process.env.PORT || 3000;
 server.listen(port, () => {

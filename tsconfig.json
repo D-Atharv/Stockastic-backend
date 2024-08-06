@@ -119,6 +119,6 @@
     "rootDir": "./src"
   },
   // "include": ["src"],
-  "include": ["src/**/*", "src/types/types.d.ts"],
+  "include": ["src/**/*", "src/types/types.d.ts", "prisma"],
   "exclude": ["node_modules"]
 }

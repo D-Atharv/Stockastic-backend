@@ -2,17 +2,18 @@ import { Request, Response } from "express";
 import prisma from "../db/prisma";
 import bcryptjs from 'bcryptjs';
 import { emailRegex } from "../types/email";
-import { regNumRegex } from "../types/reg_num";
+import { regNumRegex } from "../types/regNo";
 import { generateToken } from "../utils/generateToken";
 import { addTokenToBlacklist } from '../utils/tokenBlackList';
-
+import { User } from "@prisma/client";
 
 
 export const signup = async (req: Request, resp: Response) => {
     try {
-        const { email, name, password, confirmPassword, regNo, role = 'PARTICIPANT' } = req.body;
+        const { email, name, password, passwordConfirm, regNo, phone, role = 'PARTICIPANT' } = req.body;
 
-        if (!email || !name || !password || !confirmPassword || !regNo) {
+        if (!email || !name || !password || !passwordConfirm || !regNo || !phone) {
+            console.log("haha")
             return resp.status(400).json({ message: "Please fill in all the details" });
         }
 
@@ -21,24 +22,13 @@ export const signup = async (req: Request, resp: Response) => {
             return resp.status(400).json({ message: "Use VIT Email ID only" });
         }
 
-        //validating reg_num format
+        //validating regNo format
         if (!regNumRegex.test(regNo)) {
             return resp.status(400).json({ message: "Enter valid registration number" });
         }
 
-        if (password !== confirmPassword) {
+        if (password !== passwordConfirm) {
             return resp.send(400).json({ error: "Passwords do not match" });
-        }
-
-        //assuming user table is defined in prisma made
-        const existingUser = await prisma.user.findUnique({
-            where: {
-                email: email
-            }
-        })
-
-        if (existingUser) {
-            return resp.status(400).json({ message: "User already exists" });
         }
 
         const salt = await bcryptjs.genSalt(10);
@@ -51,25 +41,18 @@ export const signup = async (req: Request, resp: Response) => {
                 password: hashedPassword,
                 regNo: regNo,
                 role: role,
+                phone: phone
             }
+        });
+        generateToken({ id: newUser.id }, resp);
+
+        resp.status(201).json({
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email,
+            regNo: newUser.regNo,
+            role: newUser.role
         })
-
-        if (newUser) {
-
-            //generating the token
-
-            generateToken({ id: newUser.id, role: newUser.role }, resp);
-
-            resp.status(201).json({
-                id: newUser.id,
-                name: newUser.name,
-                email: newUser.email,
-                reg_num: newUser.regNo,
-                role: newUser.role
-            })
-        } else {
-            resp.status(201).json({ error: "Something went wrong" });
-        }
     }
 
     catch (error: unknown) {
@@ -80,11 +63,12 @@ export const signup = async (req: Request, resp: Response) => {
             if (error.message.includes('Unique constraint failed on the fields')) {
                 if (error.message.includes('email')) {
                     return resp.status(400).json({ message: "Email already exists" });
-                } else if (error.message.includes('username')) {
-                    return resp.status(400).json({ message: "Username already exists" });
+                } else if (error.message.includes('regNo')) {
+                    return resp.status(400).json({ message: "Registration number already exists" });
+                } else if (error.message.includes('phone')) {
+                    return resp.status(400).json({ message: "Phone number already exists" });
                 }
             }
-
             return resp.status(500).json({ error: "Internal Server Error" });
         }
     }
@@ -93,35 +77,36 @@ export const signup = async (req: Request, resp: Response) => {
 
 export const login = async (req: Request, resp: Response) => {
     try {
-        const { email, regNo, password } = req.body;
-
+        const { email, password } = req.body;    
+        
         const user = await prisma.user.findUnique({
-            where: {
+            where : {
                 email: email
             }
         });
 
         if (!user) {
-            return resp.status(400).json({
-                error: "user does not exist. Please signup"
+            return resp.status(404).json({
+                error: "User does not exist. Please signup"
             })
         }
 
         const isPasswordCorrect = await bcryptjs.compare(password, user.password);
 
-        if (!isPasswordCorrect) {
-            return resp.status(400).json({
+        if(!isPasswordCorrect) {
+            return resp.status(401).json({
                 error: "Incorrect Password. Please try again"
             })
         }
 
-        generateToken({ id: user.id, role: user.role }, resp);
+        const token = generateToken({ id: user.id }, resp);
 
         resp.status(200).json({
             id: user.id,
             name: user.name,
             email: user.email,
-            role: user.role
+            role: user.role,
+            auth_token: token
         });
 
     } catch (error: unknown) {
