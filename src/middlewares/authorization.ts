@@ -2,18 +2,19 @@ import { Request, Response, NextFunction } from "express"
 import jwt from "jsonwebtoken"
 
 interface JwtPayload {
-    userId: number,
+    id: number,
     role: string
 }
 export const Authorization = (req: Request, resp: Response, next: NextFunction) => {
-    const token = req.cookies.jwt;
+    const token = req.headers.authorization;
+    console.log(token);
 
     if (!token) {
         return resp.status(401).json({ error: "Access denied. No token provided." });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+        const decoded = jwt.verify(token.split(" ")[1], process.env.JWT_SECRET!);
         req.user = decoded; // Attach user to request
         next();
     }

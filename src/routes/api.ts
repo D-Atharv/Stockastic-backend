@@ -1,11 +1,10 @@
-import express, { Request, Response } from "express";
-import { adminAuthorization } from "../middlewares/adminAuthorization";
+import express from "express";
+import teamRouter from "./teamRouter";
+import stockRouter from "./stockRouter";
 
 const router = express.Router();
 
-router.get('/admin/stocks', adminAuthorization, (req: Request, resp: Response) => {
-    // Implementation to list users or perform admin actions
-    resp.send('Admin stock page');
-});
+router.use('/team', teamRouter);
+router.use('/stock', stockRouter);
 
 export default router;
