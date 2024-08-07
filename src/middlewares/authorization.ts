@@ -2,13 +2,11 @@ import { Request, Response, NextFunction } from "express"
 import jwt from "jsonwebtoken"
 
 interface JwtPayload {
-    id: number,
+    userId: number,
     role: string
 }
 export const Authorization = (req: Request, resp: Response, next: NextFunction) => {
     const token = req.headers.authorization;
-    console.log(token);
-
     if (!token) {
         return resp.status(401).json({ error: "Access denied. No token provided." });
     }
