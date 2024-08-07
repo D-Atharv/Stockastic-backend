@@ -101,12 +101,17 @@ export const login = async (req: Request, resp: Response) => {
 
         const token = generateToken({ id: user.id }, resp);
 
+        resp.cookie('jwt', token, {
+            httpOnly: true,
+            secure: false,
+            maxAge: 3600000,
+            sameSite: 'strict',
+          });
         resp.status(200).json({
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
-            auth_token: token
         });
 
     } catch (error: unknown) {
