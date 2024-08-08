@@ -4,7 +4,7 @@ import stockRouter from "./stockRouter";
 
 const router = express.Router();
 
-router.use('/team', teamRouter);
-router.use('/stock', stockRouter);
+router.use("/team", teamRouter);
+router.use("/stock", stockRouter);
 
 export default router;

@@ -1,8 +1,9 @@
-import { getTeam, joinTeam } from "../controllers/team";
+import { createTeam, getTeam, joinTeam } from "../controllers/team";
 import express from "express";
 
-const router = express.Router()
+const router = express.Router();
 
 router.get("/", getTeam);
-router.get("/", joinTeam);
-export default router
+router.post("/", createTeam);
+router.get("/join", joinTeam);
+export default router;
