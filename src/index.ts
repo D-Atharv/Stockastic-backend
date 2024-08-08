@@ -3,31 +3,28 @@ import http from 'http';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { Server } from 'socket.io';
 import auth from './routes/auth';
-import api from './routes/api'
+import api from './routes/api';
 import { Authorization } from './middlewares/authorization';
-// import { setupSocket } from './sockets/socket';
-
+import stockRouter from './routes/stockRouter';
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
 
 app.use(cookieParser());
 app.use(express.json());
 
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:5173'],
-  credentials: true // frontend URL
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use('/auth', auth);
-app.use('/api', Authorization);
-app.use('/api', api);
+// app.use('/api', Authorization);
+app.use('/api', stockRouter);
 
-// setupSocket(io);
 
 const port = process.env.PORT || 3000;
 server.listen(port, () => {

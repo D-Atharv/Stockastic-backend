@@ -12,7 +12,7 @@ export const Authorization = (req: Request, resp: Response, next: NextFunction) 
     }
 
     try {
-        const decoded = jwt.verify(token.split(" ")[1], process.env.JWT_SECRET!);
+        const decoded = jwt.verify(token.split(" ")[1], process.env.JWT_SECRET!) as JwtPayload;
         req.user = decoded; // Attach user to request
         next();
     }
