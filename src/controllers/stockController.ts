@@ -1,18 +1,28 @@
-import { Express, Request, Response } from 'express';
+import { Server } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const getStocks = async (req: Request, resp: Response) => {
+const registerStockHandlers = (io: Server) => {
+    io.on('connection', (socket) => {
+        console.log('New client connected');
 
-    try {
-        const stocks = await prisma.stock.findMany();
+        socket.on('fetchStocks', async () => {
+            try {
+                const stocks = await prisma.stock.findMany();
+                socket.emit('getStocks', { status: 'success', companies: stocks });
+            } catch (error) {
+                console.error('Error fetching stocks:', error);
+                socket.emit('getStocks', { status: 'fail', err: 'Internal Server Error' });
+            }
+        });
 
-        resp.json({ status: 'success', companies: stocks });
-    } catch (error) {
-        console.error(error);
-        resp.status(500).json({ status: 'fail', err: 'Internal Server Error' });
-    }
+        socket.on('disconnect', () => {
+            console.log('Client disconnected');
+        });
+    });
 };
 
-export default getStocks;
+export default registerStockHandlers;
+
+

@@ -16,20 +16,19 @@ model User {
     team     Team?  @relation(fields: [teamId], references: [id])
     teamId   Int?
     regNo    String @unique
-    phone    BigInt @unique
+    phone    String @unique
 }
 
 model Team {
     id        Int        @id @default(autoincrement())
     teamName  String     @unique
     members   User[]
-    teamId    Int
     Portfolio Portfolio?
 }
 
 model Portfolio {
     id           Int           @id @default(autoincrement())
-    balance      Float         @default(0.0)
+    balance      Float         @default(100000.0)
     teamId       Int           @unique
     team         Team          @relation(fields: [teamId], references: [id])
     transactions Transaction[]

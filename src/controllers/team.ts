@@ -3,53 +3,134 @@ import prisma from "../db/prisma";
 import { JwtPayload } from "jsonwebtoken";
 
 export const getTeam = async (req: Request, resp: Response) => {
-    const user = req.user as JwtPayload
+    const user = req.user as JwtPayload;
     const team = await prisma.user.findUnique({
         where: {
-            id: parseInt(user.userId)
+            id: user.userId,
         },
         select: {
-            teamId: true
-        }
+            teamId: true,
+        },
     });
 
     if (!team || !team.teamId) {
-        return resp.status(404).send("NO_TEAM");
+        return resp.status(404).json({ message: "NO_TEAM" });
     }
 
-    const members = await prisma.user.findMany({
+    members(req, resp);
+};
+
+export const members = async (req: Request, resp: Response) => {
+    const user = req.user as JwtPayload;
+    const teamUser = await prisma.user.findUnique({
         where: {
-            teamId: team.teamId
+            id: user.userId,
         },
         select: {
-            name: true
-        }
+            team: {
+                select: {
+                    members: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
+            },
+        },
     });
-    console.log(members);
-
-
-    return resp.send("done");
+    console.log(teamUser);
+    resp.status(200).json(teamUser);
 };
 
 export const joinTeam = async (req: Request, resp: Response) => {
-    return resp.send("h");
-}
+    const user = req.user as JwtPayload;
+    const teamUser = await prisma.user.findUnique({
+        where: {
+            id: user.userId,
+        },
+        select: {
+            id: true,
+            teamId: true,
+        },
+    });
 
-
-///
-
-// Get wallet balance
-export const getWalletBalance = async (req: Request, res: Response) => {
-    try {
-        const teamId = req.query.teamId as string;
-        const portfolio = await prisma.portfolio.findUnique({
-            where: { teamId: parseInt(teamId) },
-        });
-        if (!portfolio) {
-            return res.status(404).json({ status: 'fail', message: 'Portfolio not found' });
+    console.log(teamUser);
+    if (teamUser) {
+        if (teamUser.teamId) {
+            return resp.status(400).json({
+                message: "User already in a team. Leave team to join a new team",
+            });
+        } else {
+            const updateUser = await prisma.user.update({
+                where: {
+                    id: teamUser.id,
+                },
+                data: {
+                    teamId: req.body.teamId,
+                },
+            });
+            console.log(updateUser);
+            members(req, resp);
         }
-        res.json({ status: 'success', team: { wallet: portfolio.balance } });
-    } catch (error) {
-        res.status(500).json({ status: 'fail', message: 'Internal Server Error' });
     }
+};
+
+export const createTeam = async (req: Request, resp: Response) => {
+    console.log(req.body);
+    try {
+        const team = await prisma.team.create({
+            data: {
+                teamName: req.body.teamName,
+                teamId: req.body.teamId, // Atharv added this.
+
+            },
+        });
+
+        console.log(team);
+
+        const portfolio = await prisma.portfolio.create({
+            data: {
+                teamId: team.id,
+            },
+        });
+
+        console.log(portfolio);
+
+        req.body = {
+            teamId: team.id,
+        };
+        joinTeam(req, resp);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.log("Error in signup controller", error.message);
+
+            // Prisma unique constraint violation
+            if (error.message.includes("Unique constraint failed on the fields")) {
+                if (error.message.includes("teamName")) {
+                    return resp.status(400).json({ message: "Team name already exists" });
+                }
+            }
+            return resp.status(500).json({ error: "Internal Server Error" });
+        }
+    }
+};
+
+export const leaveTeam = async (req: Request, resp: Response) => {
+    const user = req.user as JwtPayload;
+
+    const teamUser = await prisma.user.findUnique({
+        where: {
+            id: user.id,
+        },
+        select: {
+            team: {
+                select: {
+                    id: true,
+                },
+            },
+        },
+    });
+
+    console.log(teamUser);
+    return resp.send("hehehe");
 };
