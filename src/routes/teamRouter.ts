@@ -5,5 +5,5 @@ const router = express.Router();
 
 router.get("/", getTeam);
 router.post("/", createTeam);
-router.get("/join", joinTeam);
+router.post("/join", joinTeam);
 export default router;

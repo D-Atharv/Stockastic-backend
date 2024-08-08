@@ -34,6 +34,7 @@ app.use(cors({
 app.use('/auth', auth);
 app.use('/api', Authorization);
 app.use('/api', stockRouter);
+// app.use("/api", api)
 
 // Register socket handlers
 registerStockHandlers(io);
