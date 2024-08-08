@@ -6,7 +6,7 @@ export const getTeam = async (req: Request, resp: Response) => {
   const user = req.user as JwtPayload;
   const team = await prisma.user.findUnique({
     where: {
-      id: parseInt(user.userId),
+      id: user.userId,
     },
     select: {
       teamId: true,
@@ -17,17 +17,7 @@ export const getTeam = async (req: Request, resp: Response) => {
     return resp.status(404).json({ message: "NO_TEAM" });
   }
 
-  const members = await prisma.user.findMany({
-    where: {
-      teamId: team.teamId,
-    },
-    select: {
-      name: true,
-    },
-  });
-  console.log(members);
-
-  return resp.send("done");
+  members(req, resp);
 };
 
 export const members = async (req: Request, resp: Response) => {
@@ -121,4 +111,24 @@ export const createTeam = async (req: Request, resp: Response) => {
       return resp.status(500).json({ error: "Internal Server Error" });
     }
   }
+};
+
+export const leaveTeam = async (req: Request, resp: Response) => {
+  const user = req.user as JwtPayload;
+
+  const teamUser = await prisma.user.findUnique({
+    where: {
+      id: user.id,
+    },
+    select: {
+      team: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  console.log(teamUser);
+  return resp.send("hehehe");
 };
