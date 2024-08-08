@@ -18,11 +18,11 @@ export const Authorization = (
   }
 
   try {
+    console.log(token.split(" ")[1]);
     const decoded = jwt.verify(
       token.split(" ")[1],
       process.env.JWT_SECRET!
     ) as JwtPayload;
-    console.log(decoded);
     req.user = decoded; // Attach user to request
     next();
   } catch (error) {
