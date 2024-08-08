@@ -11,7 +11,6 @@ import { Server } from 'socket.io';
 // import getStocks from './controllers/stockController'; 
 import registerStockHandlers from './controllers/stockController';
 
-
 dotenv.config();
 
 const app = express();
@@ -33,7 +32,7 @@ app.use(cors({
 }));
 
 app.use('/auth', auth);
-// app.use('/api', Authorization);
+app.use('/api', Authorization);
 app.use('/api', stockRouter);
 
 // Register socket handlers

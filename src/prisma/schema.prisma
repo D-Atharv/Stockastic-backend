@@ -72,6 +72,18 @@ model Holdings {
     avgPrice    Float
 }
 
+// model Holdings {
+//     id          Int       @id @default(autoincrement())
+//     stockId     Int
+//     stock       Stock     @relation(fields: [stockId], references: [id])
+//     portfolioId Int
+//     portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+//     quantity    Int
+//     avgPrice    Float
+
+//     @@unique([portfolioId, stockId]) // This creates a compound unique constraint
+// }
+
 enum TransactionType {
     BUY
     SELL
