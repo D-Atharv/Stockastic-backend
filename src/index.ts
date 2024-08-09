@@ -6,10 +6,10 @@ import dotenv from 'dotenv';
 import auth from './routes/auth';
 import api from './routes/api';
 import { Authorization } from './middlewares/authorization';
-import stockRouter from './routes/stockRouter';
 import { Server } from 'socket.io';
-// import getStocks from './controllers/stockController'; 
-import registerStockHandlers from './controllers/stockController';
+import team from './routes/teamRouter'
+import registerSocketHandlers from './sockets/socketHandler';
+
 
 dotenv.config();
 
@@ -33,11 +33,12 @@ app.use(cors({
 
 app.use('/auth', auth);
 app.use('/api', Authorization);
-app.use('/api', stockRouter);
 // app.use("/api", api)
+// app.use('/', team);
+
 
 // Register socket handlers
-registerStockHandlers(io);
+registerSocketHandlers(io);
 
 
 const port = process.env.PORT || 3000;

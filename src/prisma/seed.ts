@@ -1,63 +1,81 @@
-import 'dotenv/config';
-import 'dotenv/config';
-// prisma/seed.ts
-
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role, TransactionType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
-
+    // Seed a team
     const team = await prisma.team.create({
         data: {
-            teamName: 'Team Beta',
-            teamId: 2,
+            teamName: 'Alpha Team',
             Portfolio: {
                 create: {
-                    balance: 10000.0,
+                    balance: 10000,
                 },
             },
         },
     });
 
-    // Create a User
-    await prisma.user.create({
+    // Update the existing user to associate with the new team
+    await prisma.user.update({
+        where: {
+            email: 'atharv.dewangan2022@vitstudent.ac.in',
+        },
         data: {
-            email: 'user@example.com',
-            name: 'John Doe',
-            password: 'password123', // Ensure you hash passwords in production
-            role: 'PARTICIPANT',
-            teamId: team.id,
-            regNo: 'REG123456',
-            phone: '123-456-7890',
+            name: 'Atharv Dewangan',
+            role: Role.PARTICIPANT,
+            regNo: '22BCE2022',
+            phone: '1234567890',
+            team: {
+                connect: {
+                    id: team.id,
+                },
+            },
         },
     });
 
-    await prisma.user.createMany({
-        data:
-        {
-            email: 'john.doe2022@vitstudent.ac.in',
-            name: 'John Doe',
-            password: '123',
-            role: 'PARTICIPANT',
-            regNo: 'REG001',
-            phone: '1234567891',
-            teamId: null,
+    // Seed stocks
+    const stock = await prisma.stock.create({
+        data: {
+            ticker: 'AAPL',
+            stockName: 'Apple Inc.',
+            participantStocks: 1000,
+            promoterStocks: 500,
+            prices: 150.0,
+            opening: 148.0,
+            prevClosing: 149.0,
+            lower: 140.0,
+            upper: 160.0,
         },
-
     });
 
+    // // Seed a transaction
+    // await prisma.transaction.create({
+    //     data: {
+    //         transactionType: TransactionType.BUY,
+    //         quantity: 10,
+    //         price: 150.0,
+    //         portfolioId: team.Portfolio.id,
+    //         stockId: stock.id,
+    //     },
+    // });
 
-
+    // // Seed holdings
+    // await prisma.holdings.create({
+    //     data: {
+    //         portfolioId: team.Portfolio.id,
+    //         stockId: stock.id,
+    //         quantity: 10,
+    //         avgPrice: 150.0,
+    //     },
+    // });
 }
 
-
-
 main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
+    .then(async () => {
         await prisma.$disconnect();
+    })
+    .catch(async (e) => {
+        console.error(e);
+        await prisma.$disconnect();
+        process.exit(1);
     });

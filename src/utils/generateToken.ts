@@ -14,6 +14,14 @@ export const generateToken = (user: { id: number }, resp: Response) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
+    resp.cookie('userId', user.id.toString(), {
+      httpOnly: false, // Accessible via JavaScript
+      // secure: process.env.NODE_ENV === 'production', // Use true in production
+      secure: false,
+      sameSite: 'strict', // Helps prevent CSRF attacks
+      maxAge: 24 * 60 * 60 * 1000, // Cookie expiration (1 day)
+    });
+
     return token;
   } catch (error: unknown) {
     if (error instanceof Error) {

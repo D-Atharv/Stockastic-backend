@@ -97,11 +97,13 @@ export const joinTeam = async (req: Request, resp: Response) => {
 export const createTeam = async (req: Request, resp: Response) => {
   console.log(req.body);
   try {
-    const team = await prisma.team.create({
+    const team: any = await prisma.team.create({
       data: {
         teamName: req.body.teamName,
       },
     });
+
+
 
     console.log(team);
 
@@ -116,36 +118,36 @@ export const createTeam = async (req: Request, resp: Response) => {
     };
     joinTeam(req, resp);
   } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log("Error in signup controller", error.message);
+    if (error instanceof Error) {
+      console.log("Error in signup controller", error.message);
 
-        // Prisma unique constraint violation
-        if (error.message.includes("Unique constraint failed on the fields")) {
-          if (error.message.includes("teamName")) {
-            return resp.status(400).json({ message: "Team name already exists" });
-          }
+      // Prisma unique constraint violation
+      if (error.message.includes("Unique constraint failed on the fields")) {
+        if (error.message.includes("teamName")) {
+          return resp.status(400).json({ message: "Team name already exists" });
         }
-        return resp.status(500).json({ error: "Internal Server Error" });
       }
+      return resp.status(500).json({ error: "Internal Server Error" });
     }
-  };
+  }
+};
 
-  export const leaveTeam = async (req: Request, resp: Response) => {
-    const user = req.user as JwtPayload;
+export const leaveTeam = async (req: Request, resp: Response) => {
+  const user = req.user as JwtPayload;
 
-    const teamUser = await prisma.user.findUnique({
-      where: {
-        id: user.id,
-      },
-      select: {
-        team: {
-          select: {
-            id: true,
-          },
+  const teamUser = await prisma.user.findUnique({
+    where: {
+      id: user.id,
+    },
+    select: {
+      team: {
+        select: {
+          id: true,
         },
       },
-    });
+    },
+  });
 
-    console.log(teamUser);
-    return resp.send("hehehe");
-  };
+  console.log(teamUser);
+  return resp.send("hehehe");
+};
