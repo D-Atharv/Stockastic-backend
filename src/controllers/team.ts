@@ -3,7 +3,6 @@ import prisma from "../db/prisma";
 import { JwtPayload } from "jsonwebtoken";
 
 export const getTeam = async (req: Request, resp: Response) => {
-  console.log("get team");
   const user = req.user as JwtPayload;
   const team = await prisma.user.findUnique({
     where: {
@@ -38,15 +37,14 @@ export const members = async (req: Request, resp: Response) => {
             },
           },
         },
-      }
-    }
+      },
+    },
   });
-  console.log(teamUser);
-  resp.status(200).json(teamUser);
+
+  return resp.status(200).json(teamUser);
 };
 
 export const joinTeam = async (req: Request, resp: Response) => {
-  console.log(req.body);
   const user = req.user as JwtPayload;
   const teamUser = await prisma.user.findUnique({
     where: {
@@ -62,48 +60,50 @@ export const joinTeam = async (req: Request, resp: Response) => {
       return resp.status(400).json({
         message: "User already in a team. Leave team to join a new team",
       });
-    } else {
-      const teamToJoin = await prisma.team.findUnique({
-        where: {
-          teamName: req.body.teamName
-        },
-        select: {
-          id: true
-        }
-      })
-      if (teamToJoin) {
-        const updateUser = await prisma.user.update({
-          where: {
-            id: teamUser.id,
-          },
-          data: {
-            teamId: teamToJoin.id,
-          },
-        });
-        members(req, resp);
-      } else {
-        return resp.status(400).json({
-          message: "Team does not exist",
-        });
-      }
     }
-  } else {
-    return resp.status(403).json({
-      message: "User does not exist"
+    const teamToJoin = await prisma.team.findUnique({
+      where: {
+        teamName: req.body.teamName,
+      },
+      select: {
+        id: true,
+        members: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+    if (teamToJoin) {
+      if (teamToJoin.members.length > 4) {
+        return resp.status(400).json({ message: "Team is full" });
+      }
+      const updateUser = await prisma.user.update({
+        where: {
+          id: teamUser.id,
+        },
+        data: {
+          teamId: teamToJoin.id,
+        },
+      });
+      return members(req, resp);
+    }
+    return resp.status(400).json({
+      message: "Team does not exist",
     });
   }
+  return resp.status(403).json({
+    message: "User does not exist",
+  });
 };
 
 export const createTeam = async (req: Request, resp: Response) => {
-  console.log(req.body);
   try {
     const team = await prisma.team.create({
       data: {
         teamName: req.body.teamName,
       },
     });
-
-    console.log(team);
 
     const portfolio = await prisma.portfolio.create({
       data: {
@@ -116,36 +116,46 @@ export const createTeam = async (req: Request, resp: Response) => {
     };
     joinTeam(req, resp);
   } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log("Error in signup controller", error.message);
+    if (error instanceof Error) {
+      console.log("Error in signup controller", error.message);
 
-        // Prisma unique constraint violation
-        if (error.message.includes("Unique constraint failed on the fields")) {
-          if (error.message.includes("teamName")) {
-            return resp.status(400).json({ message: "Team name already exists" });
-          }
+      // Prisma unique constraint violation
+      if (error.message.includes("Unique constraint failed on the fields")) {
+        if (error.message.includes("teamName")) {
+          return resp.status(400).json({ message: "Team name already exists" });
         }
-        return resp.status(500).json({ error: "Internal Server Error" });
       }
+      return resp.status(500).json({ error: "Internal Server Error" });
     }
-  };
+  }
+};
 
-  export const leaveTeam = async (req: Request, resp: Response) => {
-    const user = req.user as JwtPayload;
+export const leaveTeam = async (req: Request, resp: Response) => {
+  console.log("Leaving");
+  const user = req.user as JwtPayload;
+  console.log(user);
 
-    const teamUser = await prisma.user.findUnique({
+  const teamUser = await prisma.user.findUnique({
+    where: {
+      id: user.userId,
+    },
+  });
+
+  console.log(teamUser);
+
+  if (teamUser) {
+    const updateUser = await prisma.user.update({
       where: {
-        id: user.id,
+        id: teamUser.id,
       },
-      select: {
-        team: {
-          select: {
-            id: true,
-          },
-        },
+      data: {
+        teamId: null,
       },
     });
-
-    console.log(teamUser);
-    return resp.send("hehehe");
-  };
+    return resp.status(200).json({ message: "Team left succesfully" });
+  } else {
+    return resp.status(403).json({
+      message: "User does not exist",
+    });
+  }
+};
