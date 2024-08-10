@@ -117,6 +117,7 @@ export const login = async (req: Request, resp: Response) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      token: token,
     });
   } catch (error: unknown) {
     if (error instanceof Error) {

@@ -6,14 +6,6 @@ export const generateToken = (user: { id: number }, resp: Response) => {
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
       expiresIn: "1d",
     });
-
-    resp.cookie("jwt", token, {
-      httpOnly: false,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-
     return token;
   } catch (error: unknown) {
     if (error instanceof Error) {
