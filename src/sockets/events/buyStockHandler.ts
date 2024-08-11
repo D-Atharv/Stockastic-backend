@@ -1,16 +1,14 @@
-import { Socket } from 'socket.io';
-import { PrismaClient } from '@prisma/client';
+// import { Socket } from 'socket.io';
+// import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 
-const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any): number => {
-    // Example of adding random fluctuation to the price
-    const randomFluctuation = Math.random() * (stock.upper - stock.lower);
-    const priceChange = volume * currentPrice * 0.001; // Adjusted to a more realistic percentage
-    const newPrice = currentPrice - priceChange + randomFluctuation;
-    return Math.max(stock.lower, Math.min(stock.upper, newPrice)); // Ensure price is within bounds
-};
-
+// const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any): number => {
+//     const randomFluctuation = Math.random() * (stock.upper - stock.lower);
+//     const priceChange = volume * currentPrice * 0.001;
+//     const newPrice = currentPrice - priceChange + randomFluctuation;
+//     return Math.max(stock.lower, Math.min(stock.upper, newPrice));
+// };
 
 
 // const buyStockHandler = (socket: Socket) => {
@@ -60,6 +58,11 @@ const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any)
 //                 return;
 //             }
 
+//             if (stock.participantStocks < volume) {
+//                 socket.emit('buyResponse', { status: 'fail', message: 'Not enough stock available.' });
+//                 return;
+//             }
+
 //             const totalPrice = stock.prices * volume;
 
 //             if (portfolio.balance < totalPrice) {
@@ -69,6 +72,10 @@ const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any)
 
 //             const updatedPrice = calculateUpdatedPrice(stock.prices, volume, stock);
 
+//             // Ensure price and volume are non-negative
+//             const finalPrice = Math.max(0, updatedPrice);
+//             const finalVolume = Math.max(0, volume);
+
 //             await prisma.portfolio.update({
 //                 where: { id: portfolio.id },
 //                 data: { balance: { decrement: totalPrice } },
@@ -77,7 +84,7 @@ const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any)
 //             await prisma.transaction.create({
 //                 data: {
 //                     transactionType: 'BUY',
-//                     quantity: volume,
+//                     quantity: finalVolume,
 //                     price: stock.prices,
 //                     portfolioId: portfolio.id,
 //                     stockId: stock.id,
@@ -95,7 +102,7 @@ const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any)
 //                 await prisma.holdings.update({
 //                     where: { id: existingHolding.id },
 //                     data: {
-//                         quantity: { increment: volume },
+//                         quantity: { increment: finalVolume },
 //                         avgPrice: stock.prices,
 //                     },
 //                 });
@@ -104,7 +111,7 @@ const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any)
 //                     data: {
 //                         stockId: stock.id,
 //                         portfolioId: portfolio.id,
-//                         quantity: volume,
+//                         quantity: finalVolume,
 //                         avgPrice: stock.prices,
 //                     },
 //                 });
@@ -113,12 +120,12 @@ const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any)
 //             await prisma.stock.update({
 //                 where: { id: stock.id },
 //                 data: {
-//                     participantStocks: { decrement: volume },
-//                     prices: updatedPrice,
+//                     participantStocks: { decrement: finalVolume },
+//                     prices: finalPrice,
 //                 },
 //             });
 
-//             socket.emit('buyResponse', { status: 'success', updatedPrice });
+//             socket.emit('buyResponse', { status: 'success', updatedPrice: finalPrice });
 //         } catch (error) {
 //             console.error(error);
 //             socket.emit('buyResponse', { status: 'fail', message: 'An error occurred while processing the transaction.' });
@@ -127,6 +134,33 @@ const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any)
 // };
 
 // export default buyStockHandler;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { Socket } from 'socket.io';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+const calculateUpdatedPrice = (currentPrice: number, volume: number, stock: any): number => {
+    const randomFluctuation = Math.random() * (stock.upper - stock.lower);
+    const priceChange = volume * currentPrice * 0.001;
+    const newPrice = currentPrice - priceChange + randomFluctuation;
+    return Math.max(stock.lower, Math.min(stock.upper, newPrice));
+};
 
 
 const buyStockHandler = (socket: Socket) => {
@@ -194,11 +228,13 @@ const buyStockHandler = (socket: Socket) => {
             const finalPrice = Math.max(0, updatedPrice);
             const finalVolume = Math.max(0, volume);
 
+            // Update the portfolio balance
             await prisma.portfolio.update({
                 where: { id: portfolio.id },
                 data: { balance: { decrement: totalPrice } },
             });
 
+            // Create a transaction
             await prisma.transaction.create({
                 data: {
                     transactionType: 'BUY',
@@ -209,6 +245,7 @@ const buyStockHandler = (socket: Socket) => {
                 },
             });
 
+            // Update or create holding
             const existingHolding = await prisma.holdings.findFirst({
                 where: {
                     portfolioId: portfolio.id,
@@ -217,11 +254,15 @@ const buyStockHandler = (socket: Socket) => {
             });
 
             if (existingHolding) {
+                // Calculate new wallet balance
+                const newWalletBalance = existingHolding.wallet - totalPrice;
+
                 await prisma.holdings.update({
                     where: { id: existingHolding.id },
                     data: {
                         quantity: { increment: finalVolume },
                         avgPrice: stock.prices,
+                        wallet: newWalletBalance, // Update wallet balance
                     },
                 });
             } else {
@@ -231,6 +272,7 @@ const buyStockHandler = (socket: Socket) => {
                         portfolioId: portfolio.id,
                         quantity: finalVolume,
                         avgPrice: stock.prices,
+                        wallet: portfolio.balance - totalPrice, // Initialize wallet balance
                     },
                 });
             }
@@ -251,4 +293,10 @@ const buyStockHandler = (socket: Socket) => {
     });
 };
 
+
 export default buyStockHandler;
+
+
+
+
+

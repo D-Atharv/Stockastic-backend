@@ -8,6 +8,7 @@ import api from "./routes/api";
 import { Authorization } from "./middlewares/authorization";
 import { Server } from "socket.io";
 import registerSocketHandlers from "./sockets/socketHandler";
+import holdingsRouter from "./routes/holdingsRouter";
 dotenv.config();
 
 const app = express();
@@ -52,6 +53,7 @@ app.use('/auth', auth);
 app.use('/api', Authorization);
 // app.use("/api", api)
 // app.use('/', team);
+app.use('/stockastic', holdingsRouter);
 
 registerSocketHandlers(io);
 

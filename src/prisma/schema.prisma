@@ -1,117 +1,5 @@
-// datasource db {
-//     provider = "postgres" // or "postgresql", depending on your database
-//     url      = env("DATABASE_URL")
-// }
-
-// generator client {
-//     provider = "prisma-client-js"
-// }
-
-// model User {
-//     id       Int    @id @default(autoincrement())
-//     email    String @unique
-//     name     String
-//     password String
-//     role     Role   @default(PARTICIPANT)
-//     team     Team?  @relation(fields: [teamId], references: [id])
-//     teamId   Int?
-//     regNo    String @unique
-//     phone    String @unique
-// }
-
-// model Team {
-//     id        Int        @id @default(autoincrement())
-//     teamName  String     @unique
-//     members   User[]
-//     teamId    Int
-//     // teamId    Int        @unique @default(autoincrement())
-//     Portfolio Portfolio?
-// }
-
-// model Portfolio {
-//     id           Int           @id @default(autoincrement())
-//     balance      Float         @default(0.0)
-//     teamId       Int           @unique
-//     team         Team          @relation(fields: [teamId], references: [id])
-//     transactions Transaction[]
-//     Holdings     Holdings[]
-// }
-
-// model Stock {
-//     id                Int           @id @default(autoincrement())
-//     ticker            String        @unique
-//     stockName         String
-//     participantStocks Int
-//     promoterStocks    Int
-//     prices            Float
-//     opening           Float
-//     prevClosing       Float
-//     lower             Float
-//     upper             Float
-//     transactions      Transaction[]
-//     Holdings          Holdings[]
-// }
-
-// model Transaction {
-//     id              Int             @id @default(autoincrement())
-//     transactionType TransactionType
-//     quantity        Int
-//     price           Float
-//     portfolioId     Int
-//     stockId         Int
-//     portfolio       Portfolio       @relation(fields: [portfolioId], references: [id])
-//     stock           Stock           @relation(fields: [stockId], references: [id])
-// }
-
-// // model Transaction {
-// //     id              Int             @id @default(autoincrement())
-// //     transactionType TransactionType
-// //     quantity        Int
-// //     price           Float
-// //     portfolioId     Int
-// //     stockId         Int
-// //     portfolio       Portfolio       @relation(fields: [portfolioId], references: [id])
-// //     stock           Stock           @relation(fields: [stockId], references: [id])
-// //     createdAt       DateTime        @default(now())
-// //     updatedAt       DateTime        @updatedAt
-
-// //     @@unique([portfolioId, stockId, createdAt]) // Ensures unique transactions per stock and portfolio at a specific time
-// // }
-
-// model Holdings {
-//     id          Int       @id @default(autoincrement())
-//     stockId     Int
-//     stock       Stock     @relation(fields: [stockId], references: [id])
-//     portfolioId Int
-//     portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
-//     quantity    Int
-//     avgPrice    Float
-// }
-
-// // model Holdings {
-// //     id          Int       @id @default(autoincrement())
-// //     stockId     Int
-// //     stock       Stock     @relation(fields: [stockId], references: [id])
-// //     portfolioId Int
-// //     portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
-// //     quantity    Int
-// //     avgPrice    Float
-
-// //     @@unique([portfolioId, stockId]) // This creates a compound unique constraint
-// // }
-
-// enum TransactionType {
-//     BUY
-//     SELL
-// }
-
-// enum Role {
-//     ADMIN
-//     PARTICIPANT
-// }
-
 datasource db {
-    provider = "postgres" // or "postgresql", depending on your database
+    provider = "postgres"
     url      = env("DATABASE_URL")
 }
 
@@ -135,7 +23,7 @@ model Team {
     id        Int        @id @default(autoincrement())
     teamName  String     @unique
     members   User[]
-    teamId    Int
+    teamId    Int //seems redundant
     // teamId    Int        @unique @default(autoincrement())
     Portfolio Portfolio?
 }
@@ -183,19 +71,8 @@ model Holdings {
     portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
     quantity    Int
     avgPrice    Float
+    wallet      Float     @default(0.0)
 }
-
-// model Holdings {
-//     id          Int       @id @default(autoincrement())
-//     stockId     Int
-//     stock       Stock     @relation(fields: [stockId], references: [id])
-//     portfolioId Int
-//     portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
-//     quantity    Int
-//     avgPrice    Float
-
-//     @@unique([portfolioId, stockId]) // This creates a compound unique constraint
-// }
 
 enum TransactionType {
     BUY
