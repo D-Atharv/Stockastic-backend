@@ -5,6 +5,8 @@ import fetchWalletHandler from './events/fetchWalletHandler';
 import transactionHandler from './events/transactionHandler';
 import stockHandler from './events/stockHandler';
 import teamHandler from './events/teamHandler';
+import { stockHoldingsHandler } from './events/stockHoldingsHandler';
+import { sellStockHandler } from './events/sellStockHandler';
 
 
 const registerSocketHandlers = (io: Server) => {
@@ -15,10 +17,10 @@ const registerSocketHandlers = (io: Server) => {
         buyStockHandler(socket);
         fetchWalletHandler(socket)
         transactionHandler(socket);
-
         stockHandler(socket);
-
         teamHandler(socket);
+        stockHoldingsHandler(socket);
+        sellStockHandler(socket);
 
 
         socket.on('disconnect', () => {
