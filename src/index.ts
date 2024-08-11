@@ -6,9 +6,7 @@ import dotenv from "dotenv";
 import auth from "./routes/auth";
 import api from "./routes/api";
 import { Authorization } from "./middlewares/authorization";
-// import stockRouter from "./routes/stockRouter";
 import { Server } from "socket.io";
-// import getStocks from './controllers/stockController';
 import registerSocketHandlers from "./sockets/socketHandler";
 dotenv.config();
 
