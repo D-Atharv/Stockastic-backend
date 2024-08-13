@@ -20,7 +20,8 @@ const registerSocketHandlers = (io: Server) => {
         stockHandler(socket);
         teamHandler(socket);
         stockHoldingsHandler(socket);
-        sellStockHandler(socket);
+        // sellStockHandler(socket);
+        sellStockHandler(socket, io);
 
 
         socket.on('disconnect', () => {
